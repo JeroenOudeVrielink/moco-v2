@@ -425,7 +425,7 @@ def main_worker(gpu, ngpus_per_node, args):
     )
 
     for epoch in range(args.start_epoch, args.epochs):
-        if args.rank == 0:
+        if dist.get_rank() == 0:
             wandb.log({"epoch": epoch})
 
         if args.distributed:
@@ -501,7 +501,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args, ngpus_per_node
 
         if i % args.print_freq == 0:
             progress.display(i)
-        if args.rank == 0 and (i % args.log_freq == 0):
+        if (dist.get_rank() == 0) and (i % args.log_freq == 0):
             wandb.log({"loss": loss.item()})
 
 
