@@ -277,9 +277,6 @@ def main():
 
 
 def main_worker(gpu, ngpus_per_node, args):
-    if dist.get_rank() == 0:
-        init_wandb(args)
-
     args.gpu = gpu
 
     # suppress printing if not master
@@ -425,6 +422,9 @@ def main_worker(gpu, ngpus_per_node, args):
         sampler=train_sampler,
         drop_last=True,
     )
+
+    if dist.get_rank() == 0:
+        init_wandb(args)
 
     for epoch in range(args.start_epoch, args.epochs):
         if dist.get_rank() == 0:
