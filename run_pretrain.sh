@@ -5,7 +5,7 @@ python main_moco.py \
 --cos \
 -a resnet50 \
 --lr 0.03 \
---batch-size 2048 \
+--batch-size 1024 \
 --dist-url 'tcp://localhost:10001' \
 --multiprocessing-distributed \
 --world-size 1 \
