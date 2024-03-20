@@ -348,6 +348,9 @@ def main_worker(gpu, ngpus_per_node, args):
     # define loss function (criterion) and optimizer
     criterion = nn.CrossEntropyLoss().cuda(args.gpu)
 
+    # infer learning rate before changing batch size
+    args.lr = args.lr * args.batch_size / 256
+
     optimizer = torch.optim.SGD(
         model.parameters(),
         args.lr,
