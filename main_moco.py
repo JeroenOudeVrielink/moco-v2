@@ -239,7 +239,6 @@ def main():
     args.date_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     args.output_dir = Path(args.output_dir) / (args.exp_name + "_" + args.date_time)
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    init_wandb(args)
 
     if args.seed is not None:
         random.seed(args.seed)
@@ -278,6 +277,9 @@ def main():
 
 
 def main_worker(gpu, ngpus_per_node, args):
+    if dist.get_rank() == 0:
+        init_wandb(args)
+
     args.gpu = gpu
 
     # suppress printing if not master
