@@ -425,6 +425,8 @@ def main_worker(gpu, ngpus_per_node, args):
     )
 
     for epoch in range(args.start_epoch, args.epochs):
+        wandb.log({"epoch": epoch})
+
         if args.distributed:
             train_sampler.set_epoch(epoch)
         adjust_learning_rate(optimizer, epoch, args)
@@ -497,6 +499,9 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
 
         if i % args.print_freq == 0:
             progress.display(i)
+
+        if i % args.log_freq == 0:
+            wandb.log({"loss": loss.item()})
 
 
 def save_checkpoint(state, is_best, filename="checkpoint.pth.tar"):
@@ -571,7 +576,8 @@ def accuracy(output, target, topk=(1,)):
 
         res = []
         for k in topk:
-            correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
+            # correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
+            correct_k = correct[:k].contiguous().view(-1).float().sum(0, keepdim=True)
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
 
