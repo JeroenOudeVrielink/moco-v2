@@ -425,18 +425,19 @@ def main_worker(gpu, ngpus_per_node, args):
     )
 
     for epoch in range(args.start_epoch, args.epochs):
-        wandb.log({"epoch": epoch})
 
         if args.distributed:
             train_sampler.set_epoch(epoch)
         adjust_learning_rate(optimizer, epoch, args)
 
         # train for one epoch
-        train(train_loader, model, criterion, optimizer, epoch, args)
+        train(train_loader, model, criterion, optimizer, epoch, args, ngpus_per_node)
 
         if not args.multiprocessing_distributed or (
             args.multiprocessing_distributed and args.rank % ngpus_per_node == 0
         ):
+            wandb.log({"epoch": epoch})
+
             if (epoch + 1) % args.model_ckpt_freq == 0:
                 filename = os.path.join(
                     args.output_dir, "checkpoint_%04d.pth.tar" % epoch
@@ -453,7 +454,7 @@ def main_worker(gpu, ngpus_per_node, args):
                 )
 
 
-def train(train_loader, model, criterion, optimizer, epoch, args):
+def train(train_loader, model, criterion, optimizer, epoch, args, ngpus_per_node):
     batch_time = AverageMeter("Time", ":6.3f")
     data_time = AverageMeter("Data", ":6.3f")
     losses = AverageMeter("Loss", ":.4e")
@@ -499,9 +500,11 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
 
         if i % args.print_freq == 0:
             progress.display(i)
-
-        if i % args.log_freq == 0:
-            wandb.log({"loss": loss.item()})
+        if not args.multiprocessing_distributed or (
+            args.multiprocessing_distributed and args.rank % ngpus_per_node == 0
+        ):
+            if i % args.log_freq == 0:
+                wandb.log({"loss": loss.item()})
 
 
 def save_checkpoint(state, is_best, filename="checkpoint.pth.tar"):
