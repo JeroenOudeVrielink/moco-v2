@@ -30,6 +30,11 @@ import torchvision.datasets as datasets
 import torchvision.models as models
 import torchvision.transforms as transforms
 
+from aiml_dataset import AIMLDataset
+import wandb
+import datetime
+from pathlib import Path
+
 
 model_names = sorted(
     name
@@ -176,9 +181,65 @@ parser.add_argument(
 )
 parser.add_argument("--cos", action="store_true", help="use cosine lr schedule")
 
+# Own args
+parser.add_argument(
+    "--annotations_file",
+    default="annotations/img_paths.csv",
+    type=str,
+    help="annotations file",
+)
+parser.add_argument(
+    "--output_dir",
+    required=True,
+    type=str,
+    help="output directory",
+)
+parser.add_argument(
+    "--exp_name",
+    required=True,
+    type=str,
+    help="experiment name",
+)
+parser.add_argument(
+    "--date_time",
+    default="",
+    type=str,
+    help="date time",
+)
+parser.add_argument(
+    "--model_ckpt_freq",
+    default=20,
+    type=int,
+    help="checkpoint save frequency",
+)
+parser.add_argument(
+    "--log_freq",
+    default=100,
+    type=int,
+    help="wandb log frequency",
+)
+
+
+def init_wandb(args):
+    run_name = f"{args.exp_name}_{args.date_time}"
+
+    # Create wandb logger
+    wandb.init(
+        name=run_name,
+        project="AIML-SSL",
+        entity="jeroenov98",
+        config=args,
+        dir=args.output_dir,
+    )
+
 
 def main():
     args = parser.parse_args()
+
+    args.date_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    args.output_dir = Path(args.output_dir) / (args.exp_name + "_" + args.date_time)
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    init_wandb(args)
 
     if args.seed is not None:
         random.seed(args.seed)
@@ -320,9 +381,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
     # Data loading code
     traindir = os.path.join(args.data, "train")
-    normalize = transforms.Normalize(
-        mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-    )
+    # normalize = transforms.Grayscale(num_output_channels=3)
     if args.aug_plus:
         # MoCo v2's aug: similar to SimCLR https://arxiv.org/abs/2002.05709
         augmentation = [
@@ -333,8 +392,8 @@ def main_worker(gpu, ngpus_per_node, args):
             transforms.RandomGrayscale(p=0.2),
             transforms.RandomApply([moco.loader.GaussianBlur([0.1, 2.0])], p=0.5),
             transforms.RandomHorizontalFlip(),
+            transforms.Grayscale(num_output_channels=3),
             transforms.ToTensor(),
-            normalize,
         ]
     else:
         # MoCo v1's aug: the same as InstDisc https://arxiv.org/abs/1805.01978
@@ -343,13 +402,12 @@ def main_worker(gpu, ngpus_per_node, args):
             transforms.RandomGrayscale(p=0.2),
             transforms.ColorJitter(0.4, 0.4, 0.4, 0.4),
             transforms.RandomHorizontalFlip(),
+            transforms.Grayscale(num_output_channels=3),
             transforms.ToTensor(),
-            normalize,
         ]
 
-    train_dataset = datasets.ImageFolder(
-        traindir, moco.loader.TwoCropsTransform(transforms.Compose(augmentation))
-    )
+    transform = moco.loader.TwoCropsTransform(transforms.Compose(augmentation))
+    train_dataset = AIMLDataset(args.annotations_file, args.data, transform=transform)
 
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
@@ -377,16 +435,20 @@ def main_worker(gpu, ngpus_per_node, args):
         if not args.multiprocessing_distributed or (
             args.multiprocessing_distributed and args.rank % ngpus_per_node == 0
         ):
-            save_checkpoint(
-                {
-                    "epoch": epoch + 1,
-                    "arch": args.arch,
-                    "state_dict": model.state_dict(),
-                    "optimizer": optimizer.state_dict(),
-                },
-                is_best=False,
-                filename="checkpoint_{:04d}.pth.tar".format(epoch),
-            )
+            if (epoch + 1) % args.model_ckpt_freq == 0:
+                filename = os.path.join(
+                    args.output_dir, "checkpoint_%04d.pth.tar" % epoch
+                )
+                save_checkpoint(
+                    {
+                        "epoch": epoch + 1,
+                        "arch": args.arch,
+                        "state_dict": model.state_dict(),
+                        "optimizer": optimizer.state_dict(),
+                    },
+                    is_best=False,
+                    filename=filename,
+                )
 
 
 def train(train_loader, model, criterion, optimizer, epoch, args):
