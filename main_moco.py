@@ -425,6 +425,8 @@ def main_worker(gpu, ngpus_per_node, args):
     )
 
     for epoch in range(args.start_epoch, args.epochs):
+        if args.rank == 0:
+            wandb.log({"epoch": epoch})
 
         if args.distributed:
             train_sampler.set_epoch(epoch)
@@ -436,7 +438,6 @@ def main_worker(gpu, ngpus_per_node, args):
         if not args.multiprocessing_distributed or (
             args.multiprocessing_distributed and args.rank % ngpus_per_node == 0
         ):
-            wandb.log({"epoch": epoch})
 
             if (epoch + 1) % args.model_ckpt_freq == 0:
                 filename = os.path.join(
@@ -500,11 +501,8 @@ def train(train_loader, model, criterion, optimizer, epoch, args, ngpus_per_node
 
         if i % args.print_freq == 0:
             progress.display(i)
-        if not args.multiprocessing_distributed or (
-            args.multiprocessing_distributed and args.rank % ngpus_per_node == 0
-        ):
-            if i % args.log_freq == 0:
-                wandb.log({"loss": loss.item()})
+        if args.rank == 0 and (i % args.log_freq == 0):
+            wandb.log({"loss": loss.item()})
 
 
 def save_checkpoint(state, is_best, filename="checkpoint.pth.tar"):
