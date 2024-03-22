@@ -14,7 +14,8 @@ python main_moco.py \
 --epochs=401 \
 --workers=20 \
 --exp_name="moco_v2_bs512_base_params" \
---output_dir="/data/moco_models"
+--output_dir="/data/moco_models" \
+--resume "/data/moco_models/moco_v2_bs512_base_params_2024-03-20_02-36-24/checkpoint_0159.pth.tar"
 
 
 
