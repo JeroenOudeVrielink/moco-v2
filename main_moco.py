@@ -370,7 +370,6 @@ def main_worker(gpu, ngpus_per_node, args):
         weight_decay=args.weight_decay,
     )
 
-
     # optionally resume from a checkpoint
     if args.resume:
         if os.path.isfile(args.resume):
@@ -442,12 +441,11 @@ def main_worker(gpu, ngpus_per_node, args):
     # ============ init schedulers ... ============
     lr_schedule = cosine_scheduler(
         args.lr,  # linear scaling rule
-        args.1e-6,
+        1e-6,
         args.epochs,
         len(train_loader),
         warmup_epochs=10,
     )
-
 
     if dist.get_rank() == 0:
         init_wandb(args)
@@ -461,7 +459,16 @@ def main_worker(gpu, ngpus_per_node, args):
         adjust_learning_rate(optimizer, epoch, args)
 
         # train for one epoch
-        train(train_loader, model, criterion, optimizer, epoch, args, ngpus_per_node, lr_schedule)
+        train(
+            train_loader,
+            model,
+            criterion,
+            optimizer,
+            epoch,
+            args,
+            ngpus_per_node,
+            lr_schedule,
+        )
 
         if not args.multiprocessing_distributed or (
             args.multiprocessing_distributed and args.rank % ngpus_per_node == 0
@@ -483,7 +490,9 @@ def main_worker(gpu, ngpus_per_node, args):
                 )
 
 
-def train(train_loader, model, criterion, optimizer, epoch, args, ngpus_per_node, lr_schedule):
+def train(
+    train_loader, model, criterion, optimizer, epoch, args, ngpus_per_node, lr_schedule
+):
     batch_time = AverageMeter("Time", ":6.3f")
     data_time = AverageMeter("Data", ":6.3f")
     losses = AverageMeter("Loss", ":.4e")
@@ -507,7 +516,6 @@ def train(train_loader, model, criterion, optimizer, epoch, args, ngpus_per_node
         it = len(train_loader) * epoch + it  # global training iteration
         for i, param_group in enumerate(optimizer.param_groups):
             param_group["lr"] = lr_schedule[it]
-
 
         if args.gpu is not None:
             images[0] = images[0].cuda(args.gpu, non_blocking=True)
