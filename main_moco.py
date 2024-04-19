@@ -666,18 +666,15 @@ class DINOLoss(nn.Module):
         Cross-entropy between softmax outputs of the teacher and student networks.
         """
         student_out = student_output / self.student_temp
-        student_out = student_out.chunk(self.ncrops)
+        # student_out = student_out.chunk(self.ncrops)
 
         # teacher centering and sharpening
         temp = self.teacher_temp_schedule[epoch]
-        if self.disable_centering:
-            teacher_output = F.softmax(teacher_output / temp, dim=-1)
-        else:
-            teacher_out = F.softmax((teacher_output - self.center) / temp, dim=-1)
-        teacher_out = teacher_out.detach().chunk(2)
+        teacher_out = F.softmax((teacher_output - self.center) / temp, dim=-1)
+        # teacher_out = teacher_out.detach().chunk(2)
 
         total_loss = torch.sum(
-            (-1 * teacher_out) * torch.nn.functional.log_softmax(student_out, dim=-1),
+            (-1 * teacher_out) * F.log_softmax(student_out, dim=-1),
             dim=-1,
         )
 
