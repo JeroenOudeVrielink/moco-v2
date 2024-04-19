@@ -513,7 +513,7 @@ def train(
         data_time.update(time.time() - end)
 
         # update weight decay and learning rate according to their schedule
-        it = len(train_loader) * epoch + it  # global training iteration
+        it = len(train_loader) * epoch + i  # global training iteration
         for i, param_group in enumerate(optimizer.param_groups):
             param_group["lr"] = lr_schedule[it]
 
