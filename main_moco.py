@@ -218,7 +218,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--log_freq",
-    default=100,
+    default=10,
     type=int,
     help="wandb log frequency",
 )

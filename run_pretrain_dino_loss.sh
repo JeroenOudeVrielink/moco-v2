@@ -14,7 +14,8 @@ python main_moco.py \
 --epochs=301 \
 --workers=12 \
 --exp_name="test" \
---output_dir="/data/moco_models"
+--output_dir="/data/moco_models" \
+--moco-m 0.995
 
 
 
