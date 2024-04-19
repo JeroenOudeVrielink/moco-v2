@@ -677,7 +677,8 @@ class DINOLoss(nn.Module):
         teacher_out = teacher_out.detach().chunk(2)
 
         total_loss = torch.sum(
-            (-1 * teacher_out) * F.log_softmax(student_out, dim=-1), dim=-1
+            (-1 * teacher_out) * torch.nn.functional.log_softmax(student_out, dim=-1),
+            dim=-1,
         )
 
         # total_loss = 0
