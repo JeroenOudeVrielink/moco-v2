@@ -677,6 +677,7 @@ class DINOLoss(nn.Module):
             (-1 * teacher_out) * F.log_softmax(student_out, dim=-1),
             dim=-1,
         )
+        total_loss = total_loss.sum()
 
         # total_loss = 0
         # n_loss_terms = 0
