@@ -358,7 +358,7 @@ def main_worker(gpu, ngpus_per_node, args):
         teacher_temp=0.04,
         warmup_teacher_temp_epochs=0,
         nepochs=args.epochs,
-    )
+    ).cuda()
 
     # infer learning rate before changing batch size
     args.lr = args.lr * args.batch_size / 256
