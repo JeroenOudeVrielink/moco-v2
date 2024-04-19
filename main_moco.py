@@ -523,10 +523,6 @@ def train(
 
         # compute output
         student_out, teacher_out = model(im_q=images[0], im_k=images[1])
-        print(type(student_out))
-        print(student_out.size())
-        print(type(teacher_out))
-        print(teacher_out.size())
         loss = criterion(student_out, teacher_out, epoch)
 
         # acc1/acc5 are (K+1)-way contrast classifier accuracy
@@ -677,7 +673,7 @@ class DINOLoss(nn.Module):
             (-1 * teacher_out) * F.log_softmax(student_out, dim=-1),
             dim=-1,
         )
-        total_loss = total_loss.sum()
+        total_loss = total_loss.mean()
 
         # total_loss = 0
         # n_loss_terms = 0
