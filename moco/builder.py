@@ -33,14 +33,16 @@ class MoCo(nn.Module):
 
         if mlp:  # hack: brute-force replacement
             # dim_mlp = self.encoder_q.fc.weight.shape[1]
-            last_layer = nn.utils.weight_norm(nn.Linear(256, 65536, bias=False))
-            last_layer.weight_g.data.fill_(1)
-            last_layer.weight_g.requires_grad = False
+            last_layer1 = nn.utils.weight_norm(nn.Linear(256, 65536, bias=False))
+            last_layer1.weight_g.data.fill_(1)
+            last_layer1.weight_g.requires_grad = False
             self.encoder_q.fc = nn.Sequential(
-                nn.Linear(2048, 256), nn.ReLU(), last_layer
+                nn.Linear(2048, 256), nn.ReLU(), last_layer1
             )
+            last_layer2 = nn.utils.weight_norm(nn.Linear(256, 65536, bias=False))
+            last_layer2.weight_g.data.fill_(1)
             self.encoder_k.fc = nn.Sequential(
-                nn.Linear(2048, 256), nn.ReLU(), nn.Linear(256, 65536)
+                nn.Linear(2048, 256), nn.ReLU(), last_layer2
             )
 
         # for param_q, param_k in zip(
@@ -49,7 +51,7 @@ class MoCo(nn.Module):
         #     param_k.data.copy_(param_q.data)  # initialize
         #     param_k.requires_grad = False  # not update by gradient
 
-        self.encoder_k.load_state_dict(self.encoder_q.state_dict(), strict=False)
+        self.encoder_k.load_state_dict(self.encoder_q.state_dict())
         # there is no backpropagation through the teacher, so no need for gradients
         for p in self.encoder_k.parameters():
             p.requires_grad = False
