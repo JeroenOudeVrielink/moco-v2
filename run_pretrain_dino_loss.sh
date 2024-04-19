@@ -5,7 +5,7 @@ python main_moco.py \
 --cos \
 -a resnet50 \
 --lr 0.03 \
---batch-size 512 \
+--batch-size 256 \
 --dist-url 'tcp://localhost:10001' \
 --multiprocessing-distributed \
 --world-size 1 \
@@ -13,7 +13,7 @@ python main_moco.py \
 --data="/jvrielink/AIML_rot_corrected" \
 --epochs=301 \
 --workers=12 \
---exp_name="mocov2_dino_loss_bs512_ep300" \
+--exp_name="test \
 --output_dir="/data/moco_models" \
 --moco-m 0.995
 
