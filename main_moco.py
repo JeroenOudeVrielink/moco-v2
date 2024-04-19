@@ -522,7 +522,7 @@ def train(
             images[1] = images[1].cuda(args.gpu, non_blocking=True)
 
         # compute output
-        student_out, teacher_out = model(im_q=images[0], im_k=images[1])
+        student_out, teacher_out = model(im_q=images, im_k=images)
         loss = criterion(student_out, teacher_out, epoch)
 
         # acc1/acc5 are (K+1)-way contrast classifier accuracy
