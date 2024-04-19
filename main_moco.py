@@ -370,6 +370,7 @@ def main_worker(gpu, ngpus_per_node, args):
         weight_decay=args.weight_decay,
     )
 
+
     # optionally resume from a checkpoint
     if args.resume:
         if os.path.isfile(args.resume):
@@ -438,6 +439,16 @@ def main_worker(gpu, ngpus_per_node, args):
         drop_last=True,
     )
 
+    # ============ init schedulers ... ============
+    lr_schedule = cosine_scheduler(
+        args.lr,  # linear scaling rule
+        args.1e-6,
+        args.epochs,
+        len(train_loader),
+        warmup_epochs=10,
+    )
+
+
     if dist.get_rank() == 0:
         init_wandb(args)
 
@@ -450,7 +461,7 @@ def main_worker(gpu, ngpus_per_node, args):
         adjust_learning_rate(optimizer, epoch, args)
 
         # train for one epoch
-        train(train_loader, model, criterion, optimizer, epoch, args, ngpus_per_node)
+        train(train_loader, model, criterion, optimizer, epoch, args, ngpus_per_node, lr_schedule)
 
         if not args.multiprocessing_distributed or (
             args.multiprocessing_distributed and args.rank % ngpus_per_node == 0
@@ -472,7 +483,7 @@ def main_worker(gpu, ngpus_per_node, args):
                 )
 
 
-def train(train_loader, model, criterion, optimizer, epoch, args, ngpus_per_node):
+def train(train_loader, model, criterion, optimizer, epoch, args, ngpus_per_node, lr_schedule):
     batch_time = AverageMeter("Time", ":6.3f")
     data_time = AverageMeter("Data", ":6.3f")
     losses = AverageMeter("Loss", ":.4e")
@@ -491,6 +502,12 @@ def train(train_loader, model, criterion, optimizer, epoch, args, ngpus_per_node
     for i, (images, _) in enumerate(train_loader):
         # measure data loading time
         data_time.update(time.time() - end)
+
+        # update weight decay and learning rate according to their schedule
+        it = len(train_loader) * epoch + it  # global training iteration
+        for i, param_group in enumerate(optimizer.param_groups):
+            param_group["lr"] = lr_schedule[it]
+
 
         if args.gpu is not None:
             images[0] = images[0].cuda(args.gpu, non_blocking=True)
@@ -674,6 +691,24 @@ class DINOLoss(nn.Module):
         self.center = self.center * self.center_momentum + batch_center * (
             1 - self.center_momentum
         )
+
+
+def cosine_scheduler(
+    base_value, final_value, epochs, niter_per_ep, warmup_epochs=0, start_warmup_value=0
+):
+    warmup_schedule = np.array([])
+    warmup_iters = warmup_epochs * niter_per_ep
+    if warmup_epochs > 0:
+        warmup_schedule = np.linspace(start_warmup_value, base_value, warmup_iters)
+
+    iters = np.arange(epochs * niter_per_ep - warmup_iters)
+    schedule = final_value + 0.5 * (base_value - final_value) * (
+        1 + np.cos(np.pi * iters / len(iters))
+    )
+
+    schedule = np.concatenate((warmup_schedule, schedule))
+    assert len(schedule) == epochs * niter_per_ep
+    return schedule
 
 
 if __name__ == "__main__":
