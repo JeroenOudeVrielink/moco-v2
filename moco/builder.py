@@ -34,10 +34,10 @@ class MoCo(nn.Module):
         if mlp:  # hack: brute-force replacement
             dim_mlp = self.encoder_q.fc.weight.shape[1]
             self.encoder_q.fc = nn.Sequential(
-                nn.Linear(dim_mlp, dim_mlp), nn.ReLU(), self.encoder_q.fc
+                nn.Linear(dim_mlp, 65536), nn.ReLU(), self.encoder_q.fc
             )
             self.encoder_k.fc = nn.Sequential(
-                nn.Linear(dim_mlp, dim_mlp), nn.ReLU(), self.encoder_k.fc
+                nn.Linear(dim_mlp, 65536), nn.ReLU(), self.encoder_k.fc
             )
 
         for param_q, param_k in zip(
@@ -47,10 +47,10 @@ class MoCo(nn.Module):
             param_k.requires_grad = False  # not update by gradient
 
         # create the queue
-        self.register_buffer("queue", torch.randn(dim, K))
-        self.queue = nn.functional.normalize(self.queue, dim=0)
+        # self.register_buffer("queue", torch.randn(dim, K))
+        # self.queue = nn.functional.normalize(self.queue, dim=0)
 
-        self.register_buffer("queue_ptr", torch.zeros(1, dtype=torch.long))
+        # self.register_buffer("queue_ptr", torch.zeros(1, dtype=torch.long))
 
     @torch.no_grad()
     def _momentum_update_key_encoder(self):
@@ -135,7 +135,7 @@ class MoCo(nn.Module):
         """
 
         # compute query features
-        q = self.encoder_q(im_q)  # queries: NxC
+        student_out = self.encoder_q(im_q)  # queries: NxC
         q = nn.functional.normalize(q, dim=1)
 
         # compute key features
@@ -145,7 +145,7 @@ class MoCo(nn.Module):
             # shuffle for making use of BN
             im_k, idx_unshuffle = self._batch_shuffle_ddp(im_k)
 
-            k = self.encoder_k(im_k)  # keys: NxC
+            teacher_out = self.encoder_k(im_k)  # keys: NxC
             k = nn.functional.normalize(k, dim=1)
 
             # undo shuffle
@@ -154,23 +154,23 @@ class MoCo(nn.Module):
         # compute logits
         # Einstein sum is more intuitive
         # positive logits: Nx1
-        l_pos = torch.einsum("nc,nc->n", [q, k]).unsqueeze(-1)
+        # l_pos = torch.einsum("nc,nc->n", [q, k]).unsqueeze(-1)
         # negative logits: NxK
-        l_neg = torch.einsum("nc,ck->nk", [q, self.queue.clone().detach()])
+        # l_neg = torch.einsum("nc,ck->nk", [q, self.queue.clone().detach()])
 
         # logits: Nx(1+K)
-        logits = torch.cat([l_pos, l_neg], dim=1)
+        # logits = torch.cat([l_pos, l_neg], dim=1)
 
         # apply temperature
-        logits /= self.T
+        # logits /= self.T
 
         # labels: positive key indicators
-        labels = torch.zeros(logits.shape[0], dtype=torch.long).cuda()
+        # labels = torch.zeros(logits.shape[0], dtype=torch.long).cuda()
 
         # dequeue and enqueue
-        self._dequeue_and_enqueue(k)
+        # self._dequeue_and_enqueue(k)
 
-        return logits, labels
+        return student_out, teacher_out
 
 
 # utils
