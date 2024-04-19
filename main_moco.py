@@ -514,7 +514,7 @@ def train(
 
         # update weight decay and learning rate according to their schedule
         it = len(train_loader) * epoch + i  # global training iteration
-        for i, param_group in enumerate(optimizer.param_groups):
+        for _, param_group in enumerate(optimizer.param_groups):
             param_group["lr"] = lr_schedule[it]
 
         if args.gpu is not None:
