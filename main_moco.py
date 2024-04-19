@@ -354,8 +354,8 @@ def main_worker(gpu, ngpus_per_node, args):
     criterion = DINOLoss(
         out_dim=65536,
         ncrops=2,
-        warmup_teacher_temp=0.04,
-        teacher_temp=0.04,
+        warmup_teacher_temp=0.07,
+        teacher_temp=0.07,
         warmup_teacher_temp_epochs=0,
         nepochs=args.epochs,
     ).cuda()
