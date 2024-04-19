@@ -13,7 +13,7 @@ python main_moco.py \
 --data="/jvrielink/AIML_rot_corrected" \
 --epochs=301 \
 --workers=12 \
---exp_name="test \
+--exp_name="test" \
 --output_dir="/data/moco_models" \
 --moco-m 0.995
 
