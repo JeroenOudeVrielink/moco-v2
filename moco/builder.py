@@ -49,7 +49,7 @@ class MoCo(nn.Module):
         #     param_k.data.copy_(param_q.data)  # initialize
         #     param_k.requires_grad = False  # not update by gradient
 
-        self.encoder_k.load_state_dict(self.encoder_q.module.state_dict())
+        self.encoder_k.load_state_dict(self.encoder_q.state_dict())
         # there is no backpropagation through the teacher, so no need for gradients
         for p in self.encoder_k.parameters():
             p.requires_grad = False
