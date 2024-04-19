@@ -136,7 +136,7 @@ class MoCo(nn.Module):
 
         # compute query features
         student_out = self.encoder_q(im_q)  # queries: NxC
-        q = nn.functional.normalize(q, dim=1)
+        student_out = nn.functional.normalize(student_out, dim=1)
 
         # compute key features
         with torch.no_grad():  # no gradient to keys
@@ -146,10 +146,10 @@ class MoCo(nn.Module):
             im_k, idx_unshuffle = self._batch_shuffle_ddp(im_k)
 
             teacher_out = self.encoder_k(im_k)  # keys: NxC
-            k = nn.functional.normalize(k, dim=1)
+            teacher_out = nn.functional.normalize(teacher_out, dim=1)
 
             # undo shuffle
-            k = self._batch_unshuffle_ddp(k, idx_unshuffle)
+            teacher_out = self._batch_unshuffle_ddp(teacher_out, idx_unshuffle)
 
         # compute logits
         # Einstein sum is more intuitive
