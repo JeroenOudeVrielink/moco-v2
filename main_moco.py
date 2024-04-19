@@ -512,7 +512,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args, ngpus_per_node
         loss.backward()
         optimizer.step()
 
-        model._momentum_update_key_encoder()  # update the key encoder
+        model.module._momentum_update_key_encoder()  # update the key encoder
 
         # measure elapsed time
         batch_time.update(time.time() - end)
