@@ -43,11 +43,16 @@ class MoCo(nn.Module):
                 nn.Linear(2048, 256), nn.ReLU(), nn.Linear(256, 65536)
             )
 
-        for param_q, param_k in zip(
-            self.encoder_q.parameters(), self.encoder_k.parameters()
-        ):
-            param_k.data.copy_(param_q.data)  # initialize
-            param_k.requires_grad = False  # not update by gradient
+        # for param_q, param_k in zip(
+        #     self.encoder_q.parameters(), self.encoder_k.parameters()
+        # ):
+        #     param_k.data.copy_(param_q.data)  # initialize
+        #     param_k.requires_grad = False  # not update by gradient
+
+        self.encoder_k.load_state_dict(self.encoder_q.module.state_dict())
+        # there is no backpropagation through the teacher, so no need for gradients
+        for p in self.encoder_k.parameters():
+            p.requires_grad = False
 
         # create the queue
         # self.register_buffer("queue", torch.randn(dim, K))
