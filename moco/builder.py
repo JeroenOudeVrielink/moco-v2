@@ -32,12 +32,12 @@ class MoCo(nn.Module):
         self.encoder_k = base_encoder(num_classes=dim)
 
         if mlp:  # hack: brute-force replacement
-            dim_mlp = self.encoder_q.fc.weight.shape[1]
+            # dim_mlp = self.encoder_q.fc.weight.shape[1]
             self.encoder_q.fc = nn.Sequential(
-                nn.Linear(dim_mlp, 65536), nn.ReLU(), self.encoder_q.fc
+                nn.Linear(2048, 256), nn.ReLU(), nn.Linear(256, 65536)
             )
             self.encoder_k.fc = nn.Sequential(
-                nn.Linear(dim_mlp, 65536), nn.ReLU(), self.encoder_k.fc
+                nn.Linear(2048, 256), nn.ReLU(), nn.Linear(256, 65536)
             )
 
         for param_q, param_k in zip(
