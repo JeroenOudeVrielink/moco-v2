@@ -37,6 +37,8 @@ import wandb
 import datetime
 from pathlib import Path
 
+import numpy as np
+
 
 model_names = sorted(
     name
