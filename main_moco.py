@@ -524,7 +524,9 @@ def train(
         # compute output
         student_out, teacher_out = model(im_q=images[0], im_k=images[1])
         print(type(student_out))
+        print(student_out.size())
         print(type(teacher_out))
+        print(teacher_out.size())
         loss = criterion(student_out, teacher_out, epoch)
 
         # acc1/acc5 are (K+1)-way contrast classifier accuracy
