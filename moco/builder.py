@@ -33,8 +33,11 @@ class MoCo(nn.Module):
 
         if mlp:  # hack: brute-force replacement
             # dim_mlp = self.encoder_q.fc.weight.shape[1]
+            last_layer = nn.utils.weight_norm(nn.Linear(256, 65536, bias=False))
+            last_layer.weight_g.data.fill_(1)
+            last_layer.weight_g.requires_grad = False
             self.encoder_q.fc = nn.Sequential(
-                nn.Linear(2048, 256), nn.ReLU(), nn.Linear(256, 65536)
+                nn.Linear(2048, 256), nn.ReLU(), last_layer
             )
             self.encoder_k.fc = nn.Sequential(
                 nn.Linear(2048, 256), nn.ReLU(), nn.Linear(256, 65536)
